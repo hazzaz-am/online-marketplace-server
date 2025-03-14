@@ -48,6 +48,12 @@ async function run() {
 			res.send(result);
 		});
 
+		app.post("/jobs", async (req, res) => {
+			const jobData = await req.body;
+			const result = await jobsCollection.insertOne(jobData);
+			res.send(result);
+		});
+
 		//! GET SINGLE JOB
 		app.get("/jobs/:id", async (req, res) => {
 			const id = req.params.id;
@@ -60,10 +66,14 @@ async function run() {
 		 * *BIDS ROUTES
 		 */
 
+		app.get("/bids", async (_req, res) => {
+			const result = await bidsCollection.find().toArray();
+			res.send(result);
+		});
+
 		app.post("/bids", async (req, res) => {
 			const body = req.body;
 			const result = await bidsCollection.insertOne(body);
-
 			res.send(result);
 		});
 

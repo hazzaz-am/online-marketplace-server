@@ -39,6 +39,9 @@ async function run() {
 		const jobsCollection = client.db("onlineMarketPlaceDB").collection("jobs");
 		const bidsCollection = client.db("onlineMarketPlaceDB").collection("bids");
 
+		/**
+		 * *JOBS ROUTES
+		 */
 		//! GET ALL JOBS FROM DB
 		app.get("/jobs", async (req, res) => {
 			const result = await jobsCollection.find().toArray();
@@ -50,6 +53,17 @@ async function run() {
 			const id = req.params.id;
 			const query = { _id: new ObjectId(id) };
 			const result = await jobsCollection.findOne(query);
+			res.send(result);
+		});
+
+		/**
+		 * *BIDS ROUTES
+		 */
+
+		app.post("/bids", async (req, res) => {
+			const body = req.body;
+			const result = await bidsCollection.insertOne(body);
+
 			res.send(result);
 		});
 

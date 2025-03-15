@@ -48,6 +48,7 @@ async function run() {
 			res.send(result);
 		});
 
+		//! ADD NEW JOB
 		app.post("/jobs", async (req, res) => {
 			const jobData = await req.body;
 			const result = await jobsCollection.insertOne(jobData);
@@ -59,6 +60,38 @@ async function run() {
 			const id = req.params.id;
 			const query = { _id: new ObjectId(id) };
 			const result = await jobsCollection.findOne(query);
+			res.send(result);
+		});
+
+		//! GET JOBS FOR INDIVIDUAL PERSON
+		app.get("/personal-jobs/:email", async (req, res) => {
+			const email = req.params.email;
+			const query = { "buyer.email": email };
+			const result = await jobsCollection.find(query).toArray();
+			res.send(result);
+		});
+
+		//! DELETE PERSONAL JOB
+		app.delete("/jobs/:id", async (req, res) => {
+			const id = req.params.id;
+			const query = { _id: new ObjectId(id) };
+			const result = await jobsCollection.deleteOne(query);
+			res.send(result);
+		});
+
+		//! UPDATE PERSONAL JOB
+		app.put("/update-job/:id", async (req, res) => {
+			const id = req.params.id;
+			const jobData = req.body;
+			const query = { _id: new ObjectId(id) };
+			const options = { upsert: true };
+			const updateDoc = {
+				$set: {
+					...jobData,
+				},
+			};
+
+			const result = await jobsCollection.updateOne(query, updateDoc, options);
 			res.send(result);
 		});
 

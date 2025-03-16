@@ -64,7 +64,7 @@ async function run() {
 		});
 
 		//! GET JOBS FOR INDIVIDUAL PERSON
-		app.get("/personal-jobs/:email", async (req, res) => {
+		app.get("/my-jobs/:email", async (req, res) => {
 			const email = req.params.email;
 			const query = { "buyer.email": email };
 			const result = await jobsCollection.find(query).toArray();
@@ -96,17 +96,47 @@ async function run() {
 		});
 
 		/**
-		 * *BIDS ROUTES
+		 * ! BIDS ROUTES
 		 */
 
+		//! ALL BIDS
 		app.get("/bids", async (_req, res) => {
 			const result = await bidsCollection.find().toArray();
 			res.send(result);
 		});
 
+		//! ADD NEW BID
 		app.post("/bids", async (req, res) => {
 			const body = req.body;
 			const result = await bidsCollection.insertOne(body);
+			res.send(result);
+		});
+
+		//! PERSONAL BIDS
+		app.get("/my-bids/:email", async (req, res) => {
+			const email = req.params.email;
+			const query = { email: email };
+			const result = await bidsCollection.find(query).toArray();
+			res.send(result);
+		});
+
+		//! BIDS REQUESTS
+		app.get("/bid-requests/:email", async (req, res) => {
+			const email = req.params.email;
+			const query = { "buyer.email": email };
+			const result = await bidsCollection.find(query).toArray();
+			res.send(result);
+		});
+
+		//! UPDATE BID STATUS
+		app.patch("/bids/:id", async (req, res) => {
+			const id = req.params.id;
+			const status = req.body;
+			const query = { _id: new ObjectId(id) };
+			const updateDoc = {
+				$set: status,
+			};
+			const result = await bidsCollection.updateOne(query, updateDoc);
 			res.send(result);
 		});
 

@@ -1,5 +1,7 @@
 const express = require("express");
 const cors = require("cors");
+var jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
 
 const app = express();
@@ -13,7 +15,7 @@ const corsOptions = {
 };
 
 // middlewares
-app.use([cors(corsOptions), express.json()]);
+app.use([cors(corsOptions), express.json(), cookieParser()]);
 
 // main route
 app.get("/", (_req, res) => {
@@ -38,6 +40,31 @@ async function run() {
 		//! COLLECTIONS
 		const jobsCollection = client.db("onlineMarketPlaceDB").collection("jobs");
 		const bidsCollection = client.db("onlineMarketPlaceDB").collection("bids");
+
+		//! GENERATE JWT Token
+		app.post("/jwt", async (req, res) => {
+			const email = req.body;
+			const token = jwt.sign(email, process.env.JWT_SECRET, {
+				expiresIn: "1d",
+			});
+			res
+				.cookie("token", token, {
+					httpOnly: true,
+					secure: process.env.NODE_ENV === "production",
+					sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+				})
+				.send({ success: true });
+		});
+
+		app.get("/logout", (req, res) => {
+			res
+				.clearCookie("token", {
+					maxAge: 0,
+					secure: process.env.NODE_ENV === "production",
+					sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+				})
+				.send({ success: true });
+		});
 
 		/**
 		 * *JOBS ROUTES

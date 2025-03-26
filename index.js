@@ -9,7 +9,10 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 const corsOptions = {
-	origin: ["http://localhost:5173"],
+	origin: [
+		"http://localhost:5173",
+		"https://online-marketplace-three.vercel.app",
+	],
 	credentials: true,
 	optionSuccessStatus: 200,
 };
@@ -35,13 +38,25 @@ const client = new MongoClient(uri, {
 	},
 });
 
+//! VERIFY JWT TOKEN
+const verifyToken = (req, res, next) => {
+	const token = req.cookies?.token;
+	if (!token) return res.status(401).send("Unauthorized access");
+
+	jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+		if (err) return res.status(401).send("Unauthenticated user");
+		req.user = user;
+		next();
+	});
+};
+
 async function run() {
 	try {
 		//! COLLECTIONS
 		const jobsCollection = client.db("onlineMarketPlaceDB").collection("jobs");
 		const bidsCollection = client.db("onlineMarketPlaceDB").collection("bids");
 
-		//! GENERATE JWT Token
+		//! GENERATE JWT TOKEN
 		app.post("/jwt", async (req, res) => {
 			const email = req.body;
 			const token = jwt.sign(email, process.env.JWT_SECRET, {
@@ -56,9 +71,11 @@ async function run() {
 				.send({ success: true });
 		});
 
+		//! REMOVE JWT TOKEN FROM BROWSER
 		app.get("/logout", (req, res) => {
 			res
 				.clearCookie("token", {
+					httpOnly: true,
 					maxAge: 0,
 					secure: process.env.NODE_ENV === "production",
 					sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
@@ -69,10 +86,34 @@ async function run() {
 		/**
 		 * *JOBS ROUTES
 		 */
+
 		//! GET ALL JOBS FROM DB
 		app.get("/jobs", async (req, res) => {
 			const result = await jobsCollection.find().toArray();
 			res.send(result);
+		});
+
+		//! GET FILTERED JOBS FROM DB
+		app.get("/filtered-jobs", async (req, res) => {
+			const size = parseInt(req.query.size);
+			const page = parseInt(req.query.page) - 1;
+			const filter = req.query.filter;
+			let query = {};
+			if (filter) {
+				query = { category: filter };
+			}
+			const result = await jobsCollection
+				.find(query)
+				.skip(page * size)
+				.limit(size)
+				.toArray();
+			res.send(result);
+		});
+
+		//! GET TOTAL JOBS FROM DB
+		app.get("/total-jobs", async (req, res) => {
+			const count = await jobsCollection.countDocuments();
+			res.send({ count });
 		});
 
 		//! ADD NEW JOB
@@ -91,8 +132,12 @@ async function run() {
 		});
 
 		//! GET JOBS FOR INDIVIDUAL PERSON
-		app.get("/my-jobs/:email", async (req, res) => {
+		app.get("/my-jobs/:email", verifyToken, async (req, res) => {
 			const email = req.params.email;
+			const emailFromToken = req?.user?.email;
+			if (emailFromToken !== email) {
+				return res.status(403).send({ message: "FORBIDDEN ACCESS" });
+			}
 			const query = { "buyer.email": email };
 			const result = await jobsCollection.find(query).toArray();
 			res.send(result);
@@ -135,21 +180,39 @@ async function run() {
 		//! ADD NEW BID
 		app.post("/bids", async (req, res) => {
 			const body = req.body;
+			const query = {
+				email: body.email,
+				jobId: body.jobId,
+			};
+			const bidExists = await bidsCollection.findOne(query);
+			if (bidExists) {
+				return res.status(400).send("BID ALREADY EXISTED");
+			}
 			const result = await bidsCollection.insertOne(body);
 			res.send(result);
 		});
 
 		//! PERSONAL BIDS
-		app.get("/my-bids/:email", async (req, res) => {
+		app.get("/my-bids/:email", verifyToken, async (req, res) => {
 			const email = req.params.email;
+			const emailFromToken = req?.user?.email;
+
+			if (emailFromToken !== email) {
+				return res.status(403).send({ message: "FORBIDDEN ACCESS" });
+			}
 			const query = { email: email };
 			const result = await bidsCollection.find(query).toArray();
 			res.send(result);
 		});
 
 		//! BIDS REQUESTS
-		app.get("/bid-requests/:email", async (req, res) => {
+		app.get("/bid-requests/:email", verifyToken, async (req, res) => {
 			const email = req.params.email;
+			const emailFromToken = req?.user?.email;
+
+			if (emailFromToken !== email) {
+				return res.status(403).send({ message: "FORBIDDEN ACCESS" });
+			}
 			const query = { "buyer.email": email };
 			const result = await bidsCollection.find(query).toArray();
 			res.send(result);

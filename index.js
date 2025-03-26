@@ -98,12 +98,22 @@ async function run() {
 			const size = parseInt(req.query.size);
 			const page = parseInt(req.query.page) - 1;
 			const filter = req.query.filter;
-			let query = {};
+			const sort = req.query.sort;
+			const searchText = req.query.search;
+
+			let options = {};
+			if (sort) {
+				options = { sort: { deadline: sort === "asc" ? 1 : -1 } };
+			}
+
+			let query = {
+				job_title: { $regex: searchText, $options: "i" },
+			};
 			if (filter) {
-				query = { category: filter };
+				query.category = filter;
 			}
 			const result = await jobsCollection
-				.find(query)
+				.find(query, options)
 				.skip(page * size)
 				.limit(size)
 				.toArray();
@@ -112,7 +122,17 @@ async function run() {
 
 		//! GET TOTAL JOBS FROM DB
 		app.get("/total-jobs", async (req, res) => {
-			const count = await jobsCollection.countDocuments();
+			const filter = req.query.filter;
+			const searchText = req.query.search;
+
+			let query = {
+				job_title: { $regex: searchText, $options: "i" },
+			};
+
+			if (filter) {
+				query.category = filter;
+			}
+			const count = await jobsCollection.countDocuments(query);
 			res.send({ count });
 		});
 

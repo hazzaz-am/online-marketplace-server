@@ -9,12 +9,10 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 const corsOptions = {
-	origin: [
-		"http://localhost:5173",
-		"https://online-marketplace-16cef.web.app",
-	],
+	origin: ["http://localhost:5173", "https://online-marketplace-16cef.web.app"],
 	credentials: true,
 	optionSuccessStatus: 200,
+	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 	allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
 };
 

@@ -9,7 +9,11 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 const corsOptions = {
-	origin: ["http://localhost:5173", "https://online-marketplace-16cef.web.app"],
+	origin: [
+		"http://localhost:5173",
+		"https://online-marketplace-16cef.web.app",
+		"https://online-marketplace-three.vercel.app",
+	],
 	credentials: true,
 	optionSuccessStatus: 200,
 	methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -18,6 +22,12 @@ const corsOptions = {
 
 // middlewares
 app.use([cors(corsOptions), express.json(), cookieParser()]);
+// Debugging
+app.use((req, res, next) => {
+    console.log("Request Origin:", req.headers.origin);
+    console.log("Method:", req.method);
+    next();
+});
 
 // main route
 app.get("/", (_req, res) => {
@@ -263,6 +273,4 @@ async function run() {
 run().catch(console.dir);
 
 // app running
-app.listen(port, () => {
-	console.log(`app is running on PORT: ${port}`);
-});
+module.exports = app;

@@ -11,7 +11,7 @@ const port = process.env.PORT || 5000;
 const corsOptions = {
 	origin: [
 		"http://localhost:5173",
-		"https://online-marketplace-three.vercel.app",
+		"https://online-marketplace-16cef.web.app",
 	],
 	credentials: true,
 	optionSuccessStatus: 200,

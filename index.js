@@ -22,12 +22,6 @@ const corsOptions = {
 
 // middlewares
 app.use([cors(corsOptions), express.json(), cookieParser()]);
-// Debugging
-app.use((req, res, next) => {
-    console.log("Request Origin:", req.headers.origin);
-    console.log("Method:", req.method);
-    next();
-});
 
 // main route
 app.get("/", (_req, res) => {
@@ -273,4 +267,6 @@ async function run() {
 run().catch(console.dir);
 
 // app running
-module.exports = app;
+app.listen(port, () => {
+	console.log(`app is running on PORT: ${port}`);
+});
